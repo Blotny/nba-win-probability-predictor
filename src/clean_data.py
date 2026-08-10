@@ -1,7 +1,8 @@
 import pandas as pd
 
 INPUT_PATH = 'data/raw/games.csv'
-OUTPUT_PATH = 'data/processed/games_matched.csv'
+UNMATCHED_OUTPUT_PATH = 'data/processed/games_clean.csv'
+MATCHED_OUTPUT_PATH = 'data/processed/games_matched.csv'
 
 def load_raw_games():
     df = pd.read_csv(INPUT_PATH)
@@ -78,26 +79,18 @@ def add_target(df):
     return df
 
 def main():
-    print("Loading raw data...")
     raw = load_raw_games()
-    print(f"Loaded {len(raw)} rows")
+    raw_fixed = fix_corrupted_matchup(raw)
 
-    raw = fix_corrupted_matchup(raw)
-    
-    print("Spliting home/away...")
-    home, away = split_home_away(raw)
- 
-    print("Merging home/away...")
+    raw_fixed.to_csv(UNMATCHED_OUTPUT_PATH, index=False)
+    print(f"Saved {len(raw_fixed)} rows to {UNMATCHED_OUTPUT_PATH}")
+
+    home, away = split_home_away(raw_fixed)
     matched = merge_home_away(home, away)
-    print(f"After merging: {len(matched)} matches")
- 
     matched = add_target(matched)
- 
-    # sorting
     matched = matched.sort_values('GAME_DATE').reset_index(drop=True)
-
-    matched.to_csv(OUTPUT_PATH, index=False)
-    print(f"Saved {len(matched)} matches to {OUTPUT_PATH}")
+    matched.to_csv(MATCHED_OUTPUT_PATH, index=False)
+    print(f"Saved {len(matched)} matches to {MATCHED_OUTPUT_PATH}")
  
     print("\nPreview:")
     print(matched[['GAME_DATE', 'HOME_TEAM_ABBR', 'AWAY_TEAM_ABBR', 'HOME_PTS', 'AWAY_PTS', 'home_win']].head())
