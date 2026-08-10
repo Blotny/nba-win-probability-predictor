@@ -9,6 +9,41 @@ def load_raw_games():
     return df
 
 
+def fix_corrupted_matchup(df):
+    # there are some anomalies in data where matchup column is corrupted
+    # we fix this column for correct split in next step
+
+    starts_with_own_team = df['TEAM_ABBREVIATION'] == df['MATCHUP'].str[:3]
+    valid = df[starts_with_own_team].copy()
+    corrupted = df[~starts_with_own_team].copy()
+
+    partner_info = valid[['GAME_ID', 'TEAM_ABBREVIATION', 'MATCHUP']].rename(
+        columns={'TEAM_ABBREVIATION': 'PARTNER_TEAM', 'MATCHUP': 'PARTNER_MATCHUP'}
+    )
+
+    corrupted = corrupted.merge(partner_info, on='GAME_ID', how='left')
+
+    def build_correct_matchup(row):
+        own_team = row['TEAM_ABBREVIATION']
+        partner_team = row['PARTNER_TEAM']
+        partner_matchup = row['PARTNER_MATCHUP']
+
+        if 'vs.' in partner_matchup:
+            # partner was home team
+            return f"{own_team} @ {partner_team}"
+        else:
+            # partner was away team
+            return f"{own_team} vs. {partner_team}"
+
+    corrupted['MATCHUP'] = corrupted.apply(build_correct_matchup, axis=1)
+
+    corrupted = corrupted.drop(columns=['PARTNER_TEAM', 'PARTNER_MATCHUP'])
+
+    fixed_df = pd.concat([valid, corrupted], ignore_index=True)
+
+    return fixed_df
+
+
 def split_home_away(df):
     # our data now have two rows for one game (home and away)
     # we want to split away games from home games for merging them
@@ -46,7 +81,9 @@ def main():
     print("Loading raw data...")
     raw = load_raw_games()
     print(f"Loaded {len(raw)} rows")
- 
+
+    raw = fix_corrupted_matchup(raw)
+    
     print("Spliting home/away...")
     home, away = split_home_away(raw)
  
