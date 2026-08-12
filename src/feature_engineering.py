@@ -21,7 +21,7 @@ def add_rolling_averages(df, window=5, stat_cols=None):
         stat_cols = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG_PCT', 'FG3_PCT']
 
     for col in stat_cols:
-        df[f'rolling_{col.lower()}_{window}'] = df.groupby(['TEAM_ABBREVIATION', 'SEASON_ID'])[col].shift(1).rolling(window=window, min_periods=1).mean()
+        df[f'rolling_{col.lower()}_{window}'] = df.groupby(['TEAM_ABBREVIATION', 'SEASON_ID'])[col].transform(lambda s: s.shift(1).rolling(window=window, min_periods=1).mean())
 
     return df
 
