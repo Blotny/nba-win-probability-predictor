@@ -11,13 +11,17 @@ def load_and_split_data(input_path=INPUT_PATH):
         'AWAY_TEAM_ID', 'AWAY_TEAM_ABBR', 'AWAY_TEAM_NAME'
     ]
     target_col = 'home_win'
-    feature_cols = [c for c in matched.columns if c not in metadata_cols + [target_col]]
+    # 'home_margin' is an outcome (home points - away points); it is a regression
+    # target for the margin model, never a feature.
+    target_cols = [target_col, 'home_margin']
+    feature_cols = [c for c in matched.columns if c not in metadata_cols + target_cols]
 
     X = matched[feature_cols]
     y = matched[target_col]
+    y_margin = matched['home_margin'] if 'home_margin' in matched.columns else None
     metadata = matched[metadata_cols]
 
-    return X, y, metadata
+    return X, y, y_margin, metadata
 
 # train test split
 def split_by_season(X, y, metadata, train_seasons, val_seasons, test_seasons):
@@ -36,7 +40,7 @@ def split_by_season(X, y, metadata, train_seasons, val_seasons, test_seasons):
     return X_train, X_val, X_test, y_train, y_val, y_test, meta_train, meta_val, meta_test
 
 if __name__ == '__main__':
-    X, y, metadata = load_and_split_data()
+    X, y, y_margin, metadata = load_and_split_data()
 
     TRAIN_SEASONS = [22020, 22021, 22022, 22023]
     VAL_SEASONS = [22024]
