@@ -25,23 +25,45 @@ DATA_PATH = os.path.join(ROOT, "data", "processed", "games_final.csv")
 MODEL_PATH = os.path.join(ROOT, "models", "win_prob_blend.joblib")
 OUT_DIR = os.path.join(ROOT, "data", "processed")
 
-TEST_SEASONS = [22025]
-VAL_SEASONS = [22024]
-SEASON_LABEL = {22020: "2020-21", 22021: "2021-22", 22022: "2022-23",
-                22023: "2023-24", 22024: "2024-25", 22025: "2025-26"}
 EPS = 1e-6
 
 
-def _split(sid):
-    if sid in TEST_SEASONS:
-        return "test"
-    if sid in VAL_SEASONS:
-        return "val"
-    return "train"
+def _season_label(sid):
+    # 22020 -> "2020-21"
+    start = int(sid) % 10000
+    return f"{start}-{str(start + 1)[-2:]}"
+
+
+def _make_split(bundle):
+    """Build sid -> split from the model's own metadata.
+
+    These boundaries used to be hardcoded here as well as in
+    train_final_model.py. Two copies means a retrain on new seasons silently
+    keeps labelling in-sample games as "test", and every dashboard number goes
+    quietly wrong in the flattering direction. The model now says what it was
+    fit on, and this follows it.
+    """
+    meta = bundle.get("meta", {})
+    fit_on = set(meta.get("trained_seasons", []))
+    held_out = set(meta.get("test_season", []))
+    val = set(meta.get("val_seasons", []))  # optional; absent in older bundles
+
+    def _split(sid):
+        sid = int(sid)
+        if sid in held_out:
+            return "test"
+        if sid in val:
+            return "val"
+        if sid in fit_on:
+            return "train"
+        return "unseen"  # a season newer than the model - genuinely out-of-sample
+
+    return _split
 
 
 def main():
     bundle = joblib.load(MODEL_PATH)
+    _split = _make_split(bundle)
     f = bundle["features"]
     X, y, y_margin, meta = load_and_split_data(DATA_PATH)
 
@@ -60,8 +82,12 @@ def main():
         "GAME_ID": meta["GAME_ID"].values,
         "GAME_DATE": pd.to_datetime(meta["GAME_DATE"]).values,
         "SEASON_ID": meta["SEASON_ID"].values,
-        "season_label": meta["SEASON_ID"].map(SEASON_LABEL).values,
+        "season_label": meta["SEASON_ID"].map(_season_label).values,
         "split": meta["SEASON_ID"].map(_split).values,
+        # predictions.csv is regenerated wholesale on every run, so unlike
+        # upcoming_predictions.csv it holds no history - but the dashboard still
+        # needs to say which model produced the numbers on screen.
+        "model_version": bundle.get("meta", {}).get("version", "unknown"),
         "HOME_TEAM_ABBR": meta["HOME_TEAM_ABBR"].values,
         "HOME_TEAM_NAME": meta["HOME_TEAM_NAME"].values,
         "AWAY_TEAM_ABBR": meta["AWAY_TEAM_ABBR"].values,
@@ -70,7 +96,11 @@ def main():
         "away_win_prob": 1 - p,
         "predicted_home_win": (p >= 0.5).astype(int),
         "actual_home_win": yv,
-        "home_margin": y_margin.to_numpy(),
+        # Int, not float. games_final.csv carries NaN margins for scheduled
+        # games, which turns the whole column float64; this file holds only
+        # played games, so writing "26.0" is both wrong and a broken refresh
+        # for any consumer reading the column as a whole number.
+        "home_margin": y_margin.to_numpy().astype(int),
         "pred_margin": pred_margin,
         "margin_win_prob": margin_win_prob,
         "HOME_elo": X["HOME_elo"].values,
@@ -100,7 +130,7 @@ def main():
     away = base.assign(team=meta["AWAY_TEAM_ABBR"].values,
                        elo_before=X["AWAY_elo"].values, is_home=0)
     elo = pd.concat([home, away], ignore_index=True)
-    elo["season_label"] = elo["SEASON_ID"].map(SEASON_LABEL)
+    elo["season_label"] = elo["SEASON_ID"].map(_season_label)
     elo = elo.sort_values(["team", "GAME_DATE"]).reset_index(drop=True)
     elo_path = os.path.join(OUT_DIR, "team_elo_history.csv")
     elo.to_csv(elo_path, index=False)
