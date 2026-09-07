@@ -2,8 +2,20 @@ import pandas as pd
 
 INPUT_PATH = 'data/processed/games_final.csv'
 
-def load_and_split_data(input_path=INPUT_PATH):
-    matched = pd.read_csv(input_path)
+def load_and_split_data(input_path=INPUT_PATH, include_future=False):
+    """Load games_final.csv into (X, y, y_margin, metadata).
+
+    Scheduled games (is_future == 1) have no target and are dropped by default,
+    so training code can never see them. predict_upcoming.py passes
+    include_future=True to score them.
+    """
+    # GAME_ID is an identifier, not a number. Reading it as int makes it compare
+    # unequal to the same id read as text elsewhere, which silently defeated the
+    # de-duplication in predict_upcoming.merge_into_log.
+    matched = pd.read_csv(input_path, dtype={'GAME_ID': str})
+
+    if 'is_future' in matched.columns and not include_future:
+        matched = matched[matched['is_future'] == 0].reset_index(drop=True)
 
     metadata_cols = [
         'GAME_ID', 'GAME_DATE', 'SEASON_ID',
@@ -14,12 +26,17 @@ def load_and_split_data(input_path=INPUT_PATH):
     # 'home_margin' is an outcome (home points - away points); it is a regression
     # target for the margin model, never a feature.
     target_cols = [target_col, 'home_margin']
-    feature_cols = [c for c in matched.columns if c not in metadata_cols + target_cols]
+    # 'is_future' is bookkeeping, not signal - it is constant across the training
+    # set, so leaving it in X would hand the model a dead column (and a live one
+    # the day fixtures are scored).
+    excluded = metadata_cols + target_cols + ['is_future', 'stale_games']
+    feature_cols = [c for c in matched.columns if c not in excluded]
 
     X = matched[feature_cols]
     y = matched[target_col]
     y_margin = matched['home_margin'] if 'home_margin' in matched.columns else None
-    metadata = matched[metadata_cols]
+    metadata = matched[[c for c in metadata_cols + ['is_future', 'stale_games']
+                        if c in matched.columns]]
 
     return X, y, y_margin, metadata
 

@@ -1,13 +1,40 @@
+import numpy as np
 import pandas as pd
 
+import os
+
 INPUT_PATH = 'data/raw/games.csv'
+SCHEDULE_PATH = 'data/raw/schedule.csv'
 UNMATCHED_OUTPUT_PATH = 'data/processed/games_clean.csv'
 MATCHED_OUTPUT_PATH = 'data/processed/games_matched.csv'
 
+
 def load_raw_games():
+    """Played games, plus any scheduled games that have not been played yet.
+
+    A game appears in schedule.csv from the day it is published and in
+    games.csv from the day it is played, so for a window of a few days both
+    files hold it. games.csv always wins: it has the box score, the schedule
+    row has nothing. Dropping the loser here is what stops a played game from
+    reappearing as a fixture and being predicted a second time.
+    """
     df = pd.read_csv(INPUT_PATH)
     df["GAME_DATE"] = pd.to_datetime(df["GAME_DATE"])
-    return df
+
+    if not os.path.exists(SCHEDULE_PATH):
+        return df
+
+    sched = pd.read_csv(SCHEDULE_PATH)
+    if sched.empty:
+        return df
+    sched["GAME_DATE"] = pd.to_datetime(sched["GAME_DATE"])
+
+    unplayed = sched[~sched["GAME_ID"].isin(df["GAME_ID"])]
+    print(f"Schedule: {len(sched) // 2} games, "
+          f"{(len(sched) - len(unplayed)) // 2} already played, "
+          f"{len(unplayed) // 2} still upcoming")
+
+    return pd.concat([df, unplayed], ignore_index=True)
 
 
 def fix_corrupted_matchup(df):
@@ -74,19 +101,38 @@ def merge_home_away(home, away):
 
     return merged
 
+def add_is_future(df, wl_col):
+    """Flag rows that have no result yet.
+
+    A scheduled game is defined by the absence of a box score, not by an
+    external marker: fetch_schedule appends rows with NaN stats and this
+    derives everything downstream from that. It also makes the backtest in
+    tests/test_future_features.py faithful - blanking a played game's box
+    score produces exactly the row shape a real fixture has.
+    """
+    df['is_future'] = df[wl_col].isna().astype(int)
+    return df
+
+
 def add_target(df):
-    df['home_win'] = (df['HOME_WL'] == 'W').astype(int)
+    # NaN, not 0, for games without a result - a future game has no target,
+    # and 0 would silently teach the model that every fixture is a home loss.
+    df['home_win'] = np.where(df['HOME_WL'].isna(), np.nan,
+                              (df['HOME_WL'] == 'W').astype(float))
     return df
 
 def main():
     raw = load_raw_games()
     raw_fixed = fix_corrupted_matchup(raw)
+    raw_fixed = raw_fixed.sort_values(['GAME_DATE', 'GAME_ID']).reset_index(drop=True)
 
+    raw_fixed = add_is_future(raw_fixed, 'WL')
     raw_fixed.to_csv(UNMATCHED_OUTPUT_PATH, index=False)
     print(f"Saved {len(raw_fixed)} rows to {UNMATCHED_OUTPUT_PATH}")
 
     home, away = split_home_away(raw_fixed)
     matched = merge_home_away(home, away)
+    matched = add_is_future(matched, 'HOME_WL')
     matched = add_target(matched)
     matched = matched.sort_values('GAME_DATE').reset_index(drop=True)
     matched.to_csv(MATCHED_OUTPUT_PATH, index=False)
@@ -94,6 +140,7 @@ def main():
  
     print("\nPreview:")
     print(matched[['GAME_DATE', 'HOME_TEAM_ABBR', 'AWAY_TEAM_ABBR', 'HOME_PTS', 'AWAY_PTS', 'home_win']].head())
+    print("Scheduled (is_future=1):", int(matched["is_future"].sum()), "games")
 
  
 if __name__ == '__main__':

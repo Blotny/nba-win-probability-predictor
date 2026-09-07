@@ -97,6 +97,12 @@ def calculate_elo(matched_df, k=ELO_K, home_advantage=ELO_HOME_ADVANTAGE,
         expected_home = _elo_expected_home(home_rating, away_rating, home_advantage)
         elo_win_prob.append(expected_home)
 
+        # 3b. scheduled game -> the pre-game rating above is what we predict from,
+        # but there is no result to learn from. Updating here would put NaN into
+        # ratings and poison every later game for both teams.
+        if row.get('is_future', 0) == 1:
+            continue
+
         actual_home = row['home_win']
 
         # 4. margin-of-victory multiplier (falls back to 1.0 without a margin col)
@@ -185,6 +191,9 @@ def add_streak(df):
 
         streak_before_game.append(current_streak)
 
+        # a scheduled game has WL = NaN and matches neither branch, so the streak
+        # carries over unchanged - which is exactly right: the outcome is unknown,
+        # so the next game's streak is the last one we actually observed.
         if row['WL'] == 'W':
             if current_streak >= 0:
                 current_streak += 1
@@ -334,6 +343,12 @@ def add_matchup_features(matched, window=MATCHUP_WINDOW, stat_cols=None):
                     break
         matchup_streak.append(streak)
 
+        # scheduled game -> features above are valid (they use prior meetings only),
+        # but there is no result or box score to add to the history. Recording it
+        # would file a NaN meeting with the away team spuriously marked winner.
+        if row.get('is_future', 0) == 1:
+            continue
+
         # record the current meeting AFTER computing features (no leakage)
         winner_abbr = home_team if row['home_win'] == 1 else away_team
         history.setdefault(key, []).append({
@@ -367,6 +382,43 @@ def add_diff_features(matched):
             if h in matched.columns and a in matched.columns:
                 matched[f'{col}_diff_{w}'] = matched[h] - matched[a]
 
+    return matched
+
+
+def add_stale_games(matched):
+    """How much unknown history sits between a fixture and the state it uses.
+
+    Every feature is computed from games with a known result. If a team plays
+    an unresolved game before the one being predicted, its Elo, form and
+    rolling averages are one or more games out of date - and tests/
+    test_future_features.py measured what that costs: at a 7-day horizon the
+    Elo difference drifts by up to 47 points and the win probability by 5pp.
+
+    stale_games = 0 means the state is exact and the prediction is as good as
+    the model gets. Anything above 0 is a prediction made on stale inputs.
+    Filter live metrics to 0; a fixed day-count horizon does NOT work, because
+    drift depends on the schedule, not on how far ahead the game is.
+
+    Played games always get 0.
+    """
+    matched['stale_games'] = 0
+    if 'is_future' not in matched.columns or not matched['is_future'].any():
+        return matched
+
+    order = matched.sort_values(['GAME_DATE', 'GAME_ID']).index
+    seen = {}  # team -> unresolved games encountered so far
+    stale = {}
+
+    for idx in order:
+        row = matched.loc[idx]
+        if row['is_future'] != 1:
+            continue
+        home, away = row['HOME_TEAM_ABBR'], row['AWAY_TEAM_ABBR']
+        stale[idx] = max(seen.get(home, 0), seen.get(away, 0))
+        seen[home] = seen.get(home, 0) + 1
+        seen[away] = seen.get(away, 0) + 1
+
+    matched.loc[list(stale), 'stale_games'] = list(stale.values())
     return matched
 
 
@@ -472,6 +524,7 @@ def main(tune=False):
     matched = merge_features_into_matched(games_clean, matched)
     matched = add_diff_features(matched)
     matched = add_early_season_flag(matched)
+    matched = add_stale_games(matched)
 
     matched.to_csv(OUTPUT_PATH, index=False)
     print(f"Saved final file to {OUTPUT_PATH}: {len(matched)} rows")
