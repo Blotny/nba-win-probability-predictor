@@ -1,2 +1,8 @@
 venv/
 __pycache__/
+
+# Regenerated on every daily run; never worth a diff.
+data/raw/schedule.csv
+
+# Power BI binary - the build guide in powerbi/README.md is the source of truth.
+powerbi/*.pbix
