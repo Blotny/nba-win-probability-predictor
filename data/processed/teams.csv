@@ -1,0 +1,31 @@
+team,team_id,team_name,city,nickname,logo_url
+ATL,1610612737,Atlanta Hawks,Atlanta,Hawks,https://a.espncdn.com/i/teamlogos/nba/500/atl.png
+BKN,1610612751,Brooklyn Nets,Brooklyn,Nets,https://a.espncdn.com/i/teamlogos/nba/500/bkn.png
+BOS,1610612738,Boston Celtics,Boston,Celtics,https://a.espncdn.com/i/teamlogos/nba/500/bos.png
+CHA,1610612766,Charlotte Hornets,Charlotte,Hornets,https://a.espncdn.com/i/teamlogos/nba/500/cha.png
+CHI,1610612741,Chicago Bulls,Chicago,Bulls,https://a.espncdn.com/i/teamlogos/nba/500/chi.png
+CLE,1610612739,Cleveland Cavaliers,Cleveland,Cavaliers,https://a.espncdn.com/i/teamlogos/nba/500/cle.png
+DAL,1610612742,Dallas Mavericks,Dallas,Mavericks,https://a.espncdn.com/i/teamlogos/nba/500/dal.png
+DEN,1610612743,Denver Nuggets,Denver,Nuggets,https://a.espncdn.com/i/teamlogos/nba/500/den.png
+DET,1610612765,Detroit Pistons,Detroit,Pistons,https://a.espncdn.com/i/teamlogos/nba/500/det.png
+GSW,1610612744,Golden State Warriors,San Francisco,Warriors,https://a.espncdn.com/i/teamlogos/nba/500/gsw.png
+HOU,1610612745,Houston Rockets,Houston,Rockets,https://a.espncdn.com/i/teamlogos/nba/500/hou.png
+IND,1610612754,Indiana Pacers,Indiana,Pacers,https://a.espncdn.com/i/teamlogos/nba/500/ind.png
+LAC,1610612746,Los Angeles Clippers,Los Angeles,Clippers,https://a.espncdn.com/i/teamlogos/nba/500/lac.png
+LAL,1610612747,Los Angeles Lakers,Los Angeles,Lakers,https://a.espncdn.com/i/teamlogos/nba/500/lal.png
+MEM,1610612763,Memphis Grizzlies,Memphis,Grizzlies,https://a.espncdn.com/i/teamlogos/nba/500/mem.png
+MIA,1610612748,Miami Heat,Miami,Heat,https://a.espncdn.com/i/teamlogos/nba/500/mia.png
+MIL,1610612749,Milwaukee Bucks,Milwaukee,Bucks,https://a.espncdn.com/i/teamlogos/nba/500/mil.png
+MIN,1610612750,Minnesota Timberwolves,Minnesota,Timberwolves,https://a.espncdn.com/i/teamlogos/nba/500/min.png
+NOP,1610612740,New Orleans Pelicans,New Orleans,Pelicans,https://a.espncdn.com/i/teamlogos/nba/500/no.png
+NYK,1610612752,New York Knicks,New York,Knicks,https://a.espncdn.com/i/teamlogos/nba/500/nyk.png
+OKC,1610612760,Oklahoma City Thunder,Oklahoma City,Thunder,https://a.espncdn.com/i/teamlogos/nba/500/okc.png
+ORL,1610612753,Orlando Magic,Orlando,Magic,https://a.espncdn.com/i/teamlogos/nba/500/orl.png
+PHI,1610612755,Philadelphia 76ers,Philadelphia,76ers,https://a.espncdn.com/i/teamlogos/nba/500/phi.png
+PHX,1610612756,Phoenix Suns,Phoenix,Suns,https://a.espncdn.com/i/teamlogos/nba/500/phx.png
+POR,1610612757,Portland Trail Blazers,Portland,Trail Blazers,https://a.espncdn.com/i/teamlogos/nba/500/por.png
+SAC,1610612758,Sacramento Kings,Sacramento,Kings,https://a.espncdn.com/i/teamlogos/nba/500/sac.png
+SAS,1610612759,San Antonio Spurs,San Antonio,Spurs,https://a.espncdn.com/i/teamlogos/nba/500/sas.png
+TOR,1610612761,Toronto Raptors,Toronto,Raptors,https://a.espncdn.com/i/teamlogos/nba/500/tor.png
+UTA,1610612762,Utah Jazz,Utah,Jazz,https://a.espncdn.com/i/teamlogos/nba/500/utah.png
+WAS,1610612764,Washington Wizards,Washington,Wizards,https://a.espncdn.com/i/teamlogos/nba/500/was.png
