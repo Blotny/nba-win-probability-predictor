@@ -197,7 +197,10 @@ v2 are scoring 2026-27 fixtures right now - a season neither has seen.
 Power BI, 6 pages: model performance, calibration, a predictions explorer,
 upsets & confidence, team Elo trajectories, and a live "upcoming games"
 master/detail view with team logos, per-fixture staleness indicators, and a
-live-vs-model-version track record. Build guide: `powerbi/README.md`.
+live-vs-model-version track record.
+
+![Model performance](docs/screenshots/page1-performance.png)
+![Upcoming games](docs/screenshots/page6-upcoming.png)
 
 ## Roadmap
 
