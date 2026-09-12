@@ -199,8 +199,8 @@ upsets & confidence, team Elo trajectories, and a live "upcoming games"
 master/detail view with team logos, per-fixture staleness indicators, and a
 live-vs-model-version track record.
 
-![Model performance](docs/screenshots/page1-performance.png)
-![Upcoming games](docs/screenshots/page6-upcoming.png)
+![Model performance](powerbi/screenshots/page1_model_performance.png)
+![Upcoming games](powerbi/screenshots/page7_upcoming_predictions.png)
 
 ## Roadmap
 
