@@ -1,6 +1,6 @@
 # NBA Win-Probability Predictor
 
-Pre-game win-probability model for NBA regular-season games, from raw box
+Pre-game win-probability model for **NBA regular-season** games, from raw box
 scores to a live daily prediction feed and a Power BI dashboard.
 
 Given two teams and a date, the model outputs `P(home team wins)` using only
@@ -17,7 +17,8 @@ betting odds, no player-level data (yet - see Roadmap).
 | baseline (home always wins)   |         0.690 |          0.687 |    0.553 |    0.500 |      0.247 |
 | logistic regression           |         0.609 |          0.605 |    0.665 |    0.726 |      0.209 |
 | XGBoost                       |         0.611 |          0.603 |    0.664 |    0.733 |      0.207 |
-| **blend (production)**        |     **0.607** |      **0.599** |  **0.685** |  **0.735** |   **0.206** |
+| **blend XGB + log reg**       |     **0.607** |      **0.599** |**0.685** |**0.735** |  **0.206** |
+
 
 Test = 2025-26 season, held out from training, 1,230 games, evaluated once.
 `elo_diff` and `elo_win_prob` carry most of the signal; possession efficiency
@@ -136,7 +137,6 @@ nba-win-probability-predictor/
 │   └── api_test.ipynb
 │
 ├── powerbi/
-│   └── README.md                  # dashboard build guide
 │
 └── run_daily.bat                  # Windows Task Scheduler entry point
 ```
