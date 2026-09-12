@@ -8,6 +8,8 @@ information available **before** the game: Elo ratings, rolling form,
 schedule fatigue, head-to-head history and possession efficiency. No
 betting odds, no player-level data (yet - see Roadmap).
 
+![Main predictor picture](powerbi/screenshots/main_pic.png)
+
 ## Results
 
 | model                        | val log loss | test log loss | test acc | test AUC | test Brier |
