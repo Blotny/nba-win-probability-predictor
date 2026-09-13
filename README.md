@@ -6,7 +6,7 @@ scores to a live daily prediction feed and a Power BI dashboard.
 Given two teams and a date, the model outputs `P(home team wins)` using only
 information available **before** the game: Elo ratings, rolling form,
 schedule fatigue, head-to-head history and possession efficiency. No
-betting odds, no player-level data (yet - see Roadmap).
+betting odds, no player-level data (yet).
 
 ![Main predictor picture](powerbi/screenshots/main_pic.png)
 
@@ -20,43 +20,23 @@ betting odds, no player-level data (yet - see Roadmap).
 | **blend XGB + log reg**       |     **0.607** |      **0.599** |**0.685** |**0.735** |  **0.206** |
 
 
-Test = 2025-26 season, held out from training, 1,230 games, evaluated once.
+Test = 2025-26 season, held out from training, 1230 games, evaluated once.
 `elo_diff` and `elo_win_prob` carry most of the signal; possession efficiency
 and schedule features are second-tier. Full methodology, model comparison and
 calibration analysis: [`notebooks/model_training.ipynb`](notebooks/model_training.ipynb).
 
 ## What makes this more than a backtest
 
-Most win-probability notebooks stop at a train/val/test split. This project
-also:
+Most win-probability notebooks stop at a train/val/test split. This project also:
 
-- **Predicts games that haven't been played yet.** Every feature is
-  pre-game by construction (rolling averages use `shift(1)`, Elo stores the
-  rating *before* the game, head-to-head history is recorded *after*
-  computing that game's features), so the same feature pipeline scores
-  scheduled fixtures without modification. Verified end-to-end by
-  [`tests/test_future_features.py`](tests/test_future_features.py): replaying
-  the end of a finished season as if it were the future reproduces all 111
-  features bit-for-bit at a 1-day horizon.
-- **Knows when its own inputs are stale.** A team that plays an unresolved
-  game before the one being predicted carries out-of-date Elo and form into
-  it. `stale_games` counts exactly that, per fixture, so predictions made on
-  fresh state and predictions made on lagging state are never silently
-  averaged together.
-- **Runs two model versions side by side, on purpose.** `v1` (trained on
-  2020-25, 2025-26 held out) is what the backtest pages report - a held-out
-  season is what makes those numbers mean anything. `v2` (trained on
-  2020-26, everything included) forecasts upcoming games - the season ahead
-  is unseen by both models, so nothing is lost by forecasting with the one
-  that has more, fresher data. Both score every fixture; the live log keeps
-  both under `model_version`, and the season settles which is actually
-  better.
+- **Predicts games that haven't been played yet.** 
+Every feature is pre-game by construction (rolling averages use `shift(1)`, Elo stores the rating *before* the game, head-to-head history is recorded *after* computing that game's features), so the same feature pipeline scores scheduled fixtures without modification. Verified end-to-end by [`tests/test_future_features.py`](tests/test_future_features.py): replaying the end of a finished season as if it were the future reproduces all 111 features bit-for-bit at a 1-day horizon.
+- **Knows when its own inputs are stale.** 
+A team that plays an unresolved game before the one being predicted carries out-of-date Elo and form into it. `stale_games` counts exactly that, per fixture, so predictions made on fresh state and predictions made on lagging state are never silently averaged together.
+- **Runs two model versions side by side, on purpose.**
+ `v1` (trained on 2020-25, 2025-26 held out) is what the backtest pages report - a held-out season is what makes those numbers mean anything. `v2` (trained on 2020-26, everything included) forecasts upcoming games - the season ahead is unseen by both models, so nothing is lost by forecasting with the one that has more, fresher data. Both score every fixture; the live log keeps both under `model_version`, and the season settles which is actually better.
 - **Keeps a prediction log with a timestamp, not just an in-memory score.**
-  Every live prediction records `predicted_at`, `data_through` (the last
-  played game its features rest on) and `model_version`, so it can be
-  attributed to exactly the model and data snapshot that produced it - and,
-  once the game is played, gets backfilled with the actual result for a
-  genuine live track record.
+  Every live prediction records `predicted_at`, `data_through` (the last played game its features rest on) and `model_version`, so it can be attributed to exactly the model and data snapshot that produced it - and, once the game is played, gets backfilled with the actual result for a genuine live track record.
 
 ## Pipeline
 
@@ -202,6 +182,11 @@ master/detail view with team logos, per-fixture staleness indicators, and a
 live-vs-model-version track record.
 
 ![Model performance](powerbi/screenshots/page1_model_performance.png)
+![Calibration](powerbi/screenshots/page2_calibration.png)
+![Predictions](powerbi/screenshots/page3_predictions_explorer.png)
+![Upsets and confidence](powerbi/screenshots/page4_upsets_and_confidence.png)
+![Team view](powerbi/screenshots/page5_team_view.png)
+![All teams elo](powerbi/screenshots/page6_all_teams_elo.png)
 ![Upcoming games](powerbi/screenshots/page7_upcoming_predictions.png)
 
 ## Roadmap
