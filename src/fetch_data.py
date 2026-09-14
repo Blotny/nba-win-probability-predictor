@@ -25,7 +25,7 @@ CURRENT_SEASON = SEASONS[-1]
 
 OUTPUT_PATH = 'data/raw/games.csv'
 
-REQUEST_PAUSE = 0.6  # nba_api is rate limited
+REQUEST_PAUSE = 0.6
 
 
 def fetch_season(season):

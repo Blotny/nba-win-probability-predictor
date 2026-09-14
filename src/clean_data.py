@@ -10,7 +10,7 @@ MATCHED_OUTPUT_PATH = 'data/processed/games_matched.csv'
 
 
 def load_raw_games():
-    """Played games, plus any scheduled games that have not been played yet.
+    """played games, plus any scheduled games that have not been played yet.
 
     A game appears in schedule.csv from the day it is published and in
     games.csv from the day it is played, so for a window of a few days both
@@ -38,8 +38,12 @@ def load_raw_games():
 
 
 def fix_corrupted_matchup(df):
-    # there are some anomalies in data where matchup column is corrupted
-    # we fix this column for correct split in next step
+    '''fix matchup column anomalies
+
+    there are some anomalies (found in jupyter notebook) in data where 
+    matchup column is corrupted. we fix those anomalies for correct 
+    split in next step
+    '''
 
     starts_with_own_team = df['TEAM_ABBREVIATION'] == df['MATCHUP'].str[:3]
     valid = df[starts_with_own_team].copy()
@@ -73,10 +77,15 @@ def fix_corrupted_matchup(df):
 
 
 def split_home_away(df):
-    # our data now have two rows for one game (home and away)
-    # we want to split away games from home games for merging them
+    '''splits data into home and away matches
 
-    # 'vs' in MATCHUP means home '@' means away
+    our data now have two rows for one game (home and away)
+    we want to differentiate away games from home games for merging them
+    into matches later
+
+    'vs' in MATCHUP means first mentioned team is home 
+    '@' means away
+    '''
     home = df[df['MATCHUP'].str.contains('vs.')].copy()
     away = df[df['MATCHUP'].str.contains('@')].copy()
 
@@ -85,6 +94,11 @@ def split_home_away(df):
     return home, away
 
 def merge_home_away(home, away):
+    '''merges splitted data into matches
+
+    from splitted data (home and away matches) merges
+    into match data (not duplicated for away team and home team)
+    '''
 
     stat_cols = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'FG_PCT',
                      'FG3_PCT', 'FT_PCT', 'OREB', 'DREB', 'PF', 'PLUS_MINUS', 'WL']
@@ -102,9 +116,9 @@ def merge_home_away(home, away):
     return merged
 
 def add_is_future(df, wl_col):
-    """Flag rows that have no result yet.
+    """flag rows that have no result yet.
 
-    A scheduled game is defined by the absence of a box score, not by an
+    a scheduled game is defined by the absence of a box score, not by an
     external marker: fetch_schedule appends rows with NaN stats and this
     derives everything downstream from that. It also makes the backtest in
     tests/test_future_features.py faithful - blanking a played game's box
@@ -115,8 +129,11 @@ def add_is_future(df, wl_col):
 
 
 def add_target(df):
-    # NaN, not 0, for games without a result - a future game has no target,
-    # and 0 would silently teach the model that every fixture is a home loss.
+    '''adds target to future games
+
+    NaN, not 0, for games without a result - a future game has no target,
+    and 0 would silently teach the model that every fixture is a home loss.
+    '''
     df['home_win'] = np.where(df['HOME_WL'].isna(), np.nan,
                               (df['HOME_WL'] == 'W').astype(float))
     return df
