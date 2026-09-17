@@ -113,7 +113,6 @@ nba-win-probability-predictor/
 │   ├── model_training.ipynb       # main analysis: models, CV, feature selection, calibration
 │   ├── feature_engineering_exploration.ipynb
 │   ├── games_final_validation.ipynb
-│   ├── csv_data_describe.ipynb
 │   └── api_test.ipynb
 │
 ├── powerbi/
