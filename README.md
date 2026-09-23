@@ -1,12 +1,9 @@
 # NBA Win-Probability Predictor
 
-Pre-game win-probability model for **NBA regular-season** games, from raw box
-scores to a live daily prediction feed and a Power BI dashboard.
+Pre-game win-probability model for **NBA regular-season** games, from raw box scores to a live daily prediction feed and a Power BI dashboard.
 
-Given two teams and a date, the model outputs `P(home team wins)` using only
-information available **before** the game: Elo ratings, rolling form,
-schedule fatigue, head-to-head history and possession efficiency. No
-betting odds, no player-level data (yet).
+Given two teams and a date, the model outputs `P(home team wins)` using only information available **before** the game: Elo ratings, rolling form, schedule fatigue, head-to-head history and possession efficiency (no data leakage). 
+No betting odds, no player-level data (yet).
 
 ![Main predictor picture](powerbi/screenshots/main_pic.png)
 
@@ -33,7 +30,7 @@ Most win-probability notebooks stop at a train/val/test split. This project also
 Every feature is pre-game by construction (rolling averages use `shift(1)`, Elo stores the rating *before* the game, head-to-head history is recorded *after* computing that game's features), so the same feature pipeline scores scheduled fixtures without modification. Verified end-to-end by [`tests/test_future_features.py`](tests/test_future_features.py): replaying the end of a finished season as if it were the future reproduces all 111 features bit-for-bit at a 1-day horizon.
 - **Knows when its own inputs are stale.** 
 A team that plays an unresolved game before the one being predicted carries out-of-date Elo and form into it. `stale_games` counts exactly that, per fixture, so predictions made on fresh state and predictions made on lagging state are never silently averaged together.
-- **Runs two model versions side by side, on purpose.**
+- **Runs two model versions side by side.**
  `v1` (trained on 2020-25, 2025-26 held out) is what the backtest pages report - a held-out season is what makes those numbers mean anything. `v2` (trained on 2020-26, everything included) forecasts upcoming games - the season ahead is unseen by both models, so nothing is lost by forecasting with the one that has more, fresher data. Both score every fixture; the live log keeps both under `model_version`, and the season settles which is actually better.
 - **Keeps a prediction log with a timestamp, not just an in-memory score.**
   Every live prediction records `predicted_at`, `data_through` (the last played game its features rest on) and `model_version`, so it can be attributed to exactly the model and data snapshot that produced it - and, once the game is played, gets backfilled with the actual result for a genuine live track record.
@@ -62,16 +59,9 @@ today's have not started.
 
 ## Data
 
-`nba_api`, NBA regular-season games, 2020-21 through the current season.
-1 row = 1 game (home + away merged), 7,230 played games as of the 2025-26
-season.
+`nba_api`, NBA regular-season games, 2020-21 through the current season. 1 row = 1 game (home + away merged), 7,230 played games as of the 2025-26 season.
 
-111 engineered features -> 39 selected (L1-logreg + XGBoost importance,
-union) for the production model. Categories: Elo (margin-of-victory-aware,
-538-style), rolling form (5/10-game windows), schedule fatigue (rest days,
-games in the trailing 3/7 days), head-to-head history (last 5 meetings,
-cross-season), possession efficiency (offensive/defensive rating, adjusted
-for opponent strength).
+111 engineered features -> 39 selected (L1-logreg + XGBoost importance, union) for the production model. Categories: Elo (margin-of-victory-aware **538-style**), rolling form (5/10-game windows), schedule fatigue (rest days, games in the trailing 3/7 days) head-to-head history (last 5 meetings, cross-season), possession efficiency (offensive/defensive rating, adjusted for opponent strength).
 
 ## Project structure
 
@@ -173,14 +163,12 @@ first model listed gets `role = primary` (what the dashboard shows by
 default), the rest are `role = shadow` (logged for comparison). Both v1 and
 v2 are scoring 2026-27 fixtures right now - a season neither has seen.
 
-## Dashboard
+## PowerBI dashboard
 
 Power BI, 7 pages: model performance, calibration, a predictions explorer, upsets & confidence, team Elo trajectories, all-teams Elo, and a live "upcoming games" master/detail view with team logos, per-fixture staleness indicators, and a live-vs-model-version track record.
 Page-by-page guide: [`powerbi/README.md`](powerbi/README.md); full walkthrough: [`powerbi/dashboard.pdf`](powerbi/dashboard.pdf).
 
-Shown here as a static export (screenshots + PDF) rather than a live embed -
-Power BI's public-sharing feature needs tenant-admin rights not available on
-my account.
+Shown here as a static export (screenshots + PDF) rather than a live embed - Power BI's public-sharing feature needs tenant-admin rights not available on my account.
 
 ![Model performance](powerbi/screenshots/page1_model_performance.png)
 ![Calibration](powerbi/screenshots/page2_calibration.png)
